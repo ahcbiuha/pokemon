@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- DOM 元素引用 ---
     const startScreen = document.getElementById('start-screen');
-    const gameScreen = document.getElementById('game-screen');
+    const gameScreen = document.getElementById('game-screen'); // Main container for map/info
     const startButton = document.getElementById('start-button');
 
     const starterSelection = document.getElementById('starter-selection');
@@ -17,12 +17,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const opponentHpText = document.getElementById('opponent-hp-text');
     const opponentMaxHpText = document.getElementById('opponent-max-hp-text');
     const opponentHpBar = document.getElementById('opponent-hp-bar');
+    const opponentSprite = document.getElementById('opponent-sprite'); // Added for sprite
     const playerPokemonNameSpan = document.getElementById('player-pokemon-name');
     const playerHpText = document.getElementById('player-hp-text');
     const playerMaxHpText = document.getElementById('player-max-hp-text');
     const playerHpBar = document.getElementById('player-hp-bar');
+    const playerSprite = document.getElementById('player-sprite'); // Added for sprite
     const battleActions = document.getElementById('battle-actions');
-    const attackButton = document.getElementById('attack-button'); // 現在會變成招式按鈕的容器
+    // const attackButton = document.getElementById('attack-button'); // This is now mostly a container, not a direct button
     const itemButton = document.getElementById('item-button');
     const switchPokemonButton = document.getElementById('switch-pokemon-button');
     const runButton = document.getElementById('run-button');
@@ -48,6 +50,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const confirmReplacementButton = document.getElementById('confirm-replacement');
     const cancelReplacementButton = document.getElementById('cancel-replacement');
 
+    // 新增經驗值條 DOM 元素
+    const playerExpText = document.getElementById('player-exp-text');
+    const playerExpToNextLevelText = document.getElementById('player-exp-to-next-level-text');
+    const playerExpBar = document.getElementById('player-exp-bar');
+
+    // 新增戰鬥結束選項模態視窗 DOM 元素
+    const battleEndOptionsModal = document.getElementById('battle-end-options-modal');
+    const battleOutcomeMessage = document.getElementById('battle-outcome-message');
+    const returnToMapButton = document.getElementById('return-to-map-button');
+    const encounterAgainButton = document.getElementById('encounter-again-button');
+
+
     // --- 遊戲數據與狀態 ---
     let playerPokemons = []; // 玩家攜帶的寶可夢隊伍 (最多 6 隻)
     let pokemonStorage = []; // 寶可夢背包 (無限隻)
@@ -59,6 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const MAX_POKEMONS = 6;
     let newlyAcquiredPokemon = null; // 暫存新獲得的寶可夢
+    let lastEncounteredWildPokemonId = null; // 儲存上次遇到的野生寶可夢 ID
 
     // 寶可夢招式數據
     const allMoves = {
@@ -68,7 +83,11 @@ document.addEventListener('DOMContentLoaded', () => {
         vineWhip: { name: '藤鞭', power: 30, accuracy: 0.9, type: 'grass' },
         peck: { name: '啄', power: 25, accuracy: 0.95, type: 'flying' },
         quickAttack: { name: '電光一閃', power: 20, accuracy: 1.0, type: 'normal' },
-        leechLife: { name: '吸血', power: 20, accuracy: 0.9, type: 'bug' }
+        leechLife: { name: '吸血', power: 20, accuracy: 0.9, type: 'bug' },
+        // 新增招式
+        stringShot: { name: '吐絲', power: 0, accuracy: 0.95, type: 'bug', effect: 'lowerSpeed' }, // 假設可以降低對手速度
+        poisonSting: { name: '毒針', power: 15, accuracy: 1.0, type: 'poison' }, // 假設有中毒機率
+        thunderShock: { name: '電擊', power: 35, accuracy: 0.9, type: 'electric' },
     };
 
     // 寶可夢數據 (擴展版：加入 defense, speed, type, moves, level, currentExp, expToNextLevel)
@@ -79,17 +98,26 @@ document.addEventListener('DOMContentLoaded', () => {
         pidgey: { id: 'pidgey', name: '波波', type: 'normal', maxHp: 60, currentHp: 60, attack: 10, defense: 8, speed: 20, catchRate: 0.6, baseExp: 30, level: 1, currentExp: 0, expToNextLevel: 80, moves: ['tackle', 'peck'] },
         rattata: { id: 'rattata', name: '小拉達', type: 'normal', maxHp: 50, currentHp: 50, attack: 12, defense: 7, speed: 22, catchRate: 0.7, baseExp: 25, level: 1, currentExp: 0, expToNextLevel: 70, moves: ['tackle', 'quickAttack'] },
         zubat: { id: 'zubat', name: '超音蝠', type: 'flying', maxHp: 70, currentHp: 70, attack: 11, defense: 9, speed: 25, catchRate: 0.5, baseExp: 40, level: 1, currentExp: 0, expToNextLevel: 90, moves: ['tackle', 'leechLife'] },
+        // 新增寶可夢
+        caterpie: { id: 'caterpie', name: '綠毛蟲', type: 'bug', maxHp: 65, currentHp: 65, attack: 8, defense: 7, speed: 15, catchRate: 0.8, baseExp: 20, level: 1, currentExp: 0, expToNextLevel: 60, moves: ['tackle', 'stringShot'] },
+        weedle: { id: 'weedle', name: '獨角蟲', type: 'bug', maxHp: 60, currentHp: 60, attack: 9, defense: 6, speed: 18, catchRate: 0.75, baseExp: 22, level: 1, currentExp: 0, expToNextLevel: 65, moves: ['tackle', 'poisonSting'] },
+        ekans: { id: 'ekans', name: '阿柏蛇', type: 'poison', maxHp: 75, currentHp: 75, attack: 14, defense: 9, speed: 17, catchRate: 0.4, baseExp: 45, level: 1, currentExp: 0, expToNextLevel: 95, moves: ['tackle', 'poisonSting'] },
+        pikachu: { id: 'pikachu', name: '皮卡丘', type: 'electric', maxHp: 70, currentHp: 70, attack: 16, defense: 8, speed: 30, catchRate: 0.25, baseExp: 60, level: 1, currentExp: 0, expToNextLevel: 120, moves: ['tackle', 'thunderShock'] },
+        // 您可以繼續在此處添加更多寶可夢
     };
 
     // 類型相剋表 (簡化版，你可以擴展更多類型和倍率)
     // 攻擊方類型 : { 防禦方類型 : 倍率 }
     const typeEffectiveness = {
-        normal: { normal: 1, fire: 1, water: 1, grass: 1, flying: 1, bug: 1 },
-        fire: { normal: 1, fire: 0.5, water: 0.5, grass: 2, flying: 1, bug: 2 },
-        water: { normal: 1, fire: 2, water: 0.5, grass: 0.5, flying: 1, bug: 1 },
-        grass: { normal: 1, fire: 0.5, water: 2, grass: 0.5, flying: 0.5, bug: 0.5 },
-        flying: { normal: 1, fire: 1, water: 1, grass: 2, flying: 1, bug: 2 },
-        bug: { normal: 1, fire: 0.5, water: 1, grass: 2, flying: 0.5, bug: 1 },
+        normal: { normal: 1, fire: 1, water: 1, grass: 1, flying: 1, bug: 1, poison: 1, electric: 1 },
+        fire: { normal: 1, fire: 0.5, water: 0.5, grass: 2, flying: 1, bug: 2, poison: 1, electric: 1 },
+        water: { normal: 1, fire: 2, water: 0.5, grass: 0.5, flying: 1, bug: 1, poison: 1, electric: 1 },
+        grass: { normal: 1, fire: 0.5, water: 2, grass: 0.5, flying: 0.5, bug: 0.5, poison: 0.5, electric: 1 },
+        flying: { normal: 1, fire: 1, water: 1, grass: 2, flying: 1, bug: 2, poison: 1, electric: 0.5 },
+        bug: { normal: 1, fire: 0.5, water: 1, grass: 2, flying: 0.5, bug: 1, poison: 0.5, electric: 1 },
+        // 新增的屬性相剋關係
+        poison: { normal: 1, fire: 1, water: 1, grass: 2, flying: 1, bug: 1, poison: 0.5, electric: 1 },
+        electric: { normal: 1, fire: 1, water: 2, grass: 0.5, flying: 2, bug: 1, poison: 1, electric: 0.5 },
     };
 
 
@@ -102,13 +130,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 地圖數據 (每個地圖可遭遇的寶可夢，新增寶可夢等級範圍)
     const maps = [
-        { id: 'map1', name: '新手森林', wildPokemons: [{ id: 'pidgey', level: [1, 3] }, { id: 'rattata', level: [1, 3] }] },
-        { id: 'map2', name: '陽光平原', wildPokemons: [{ id: 'pidgey', level: [2, 4] }, { id: 'rattata', level: [2, 4] }, { id: 'zubat', level: [2, 4] }] },
-        { id: 'map3', name: '神秘洞穴', wildPokemons: [{ id: 'zubat', level: [3, 5] }, { id: 'rattata', level: [3, 5] }] },
+        { id: 'map1', name: '新手森林', wildPokemons: [{ id: 'pidgey', level: [1, 3] }, { id: 'rattata', level: [1, 3] }, { id: 'caterpie', level: [1, 2] }] }, // 新增綠毛蟲
+        { id: 'map2', name: '陽光平原', wildPokemons: [{ id: 'pidgey', level: [2, 4] }, { id: 'rattata', level: [2, 4] }, { id: 'zubat', level: [2, 4] }, { id: 'weedle', level: [2, 3] }] }, // 新增獨角蟲
+        { id: 'map3', name: '神秘洞穴', wildPokemons: [{ id: 'zubat', level: [3, 5] }, { id: 'rattata', level: [3, 5] }, { id: 'ekans', level: [3, 4] }] }, // 新增阿柏蛇
         { id: 'map4', name: '清澈溪流', wildPokemons: [{ id: 'squirtle', level: [4, 6] }, { id: 'pidgey', level: [3, 5] }] },
         { id: 'map5', name: '烈日沙漠', wildPokemons: [{ id: 'charmander', level: [4, 6] }, { id: 'rattata', level: [3, 5] }] },
         { id: 'map6', name: '花園小徑', wildPokemons: [{ id: 'bulbasaur', level: [4, 6] }, { id: 'pidgey', level: [3, 5] }] },
-        { id: 'map7', name: '迷霧山谷', wildPokemons: [{ id: 'zubat', level: [5, 7] }, { id: 'pidgey', level: [4, 6] }] },
+        { id: 'map7', name: '迷霧山谷', wildPokemons: [{ id: 'zubat', level: [5, 7] }, { id: 'pidgey', level: [4, 6] }, { id: 'pikachu', level: [5, 6] }] }, // 新增皮卡丘
         { id: 'map8', name: '遠古遺跡', wildPokemons: [{ id: 'charmander', level: [6, 8] }, { id: 'squirtle', level: [6, 8] }, { id: 'bulbasaur', level: [6, 8] }] },
         { id: 'map9', name: '冠軍之路', wildPokemons: Object.keys(allPokemons).map(id => ({ id: id, level: [7, 10] })) } // 所有寶可夢
     ];
@@ -122,15 +150,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 遊戲狀態切換函數 ---
     function showScreen(screenId) {
-        const sections = document.querySelectorAll('.game-section');
-        sections.forEach(section => section.classList.add('hidden'));
-        battleScreen.classList.add('hidden');
-        shopScreen.classList.add('hidden');
+        // Hide all major game sections first
+        const mainSections = [startScreen, starterSelection, gameScreen, battleScreen, shopScreen];
+        mainSections.forEach(section => {
+            if (section) section.classList.add('hidden'); // Ensure section exists before accessing
+        });
+        // Also hide any active modals
+        if (battleEndOptionsModal) battleEndOptionsModal.classList.add('hidden');
+        if (pokemonFullModal) pokemonFullModal.classList.add('hidden');
 
+
+        // Then show the specific screen requested
         if (screenId === 'starter-selection') {
             starterSelection.classList.remove('hidden');
         } else if (screenId === 'map-selection') {
-            mapSelection.classList.remove('hidden');
+            gameScreen.classList.remove('hidden'); // Crucial: Show the main game-screen container
+            mapSelection.classList.remove('hidden'); // Show the map-selection within it
         } else if (screenId === 'battle-screen') {
             battleScreen.classList.remove('hidden');
         } else if (screenId === 'shop-screen') {
@@ -140,6 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- UI 更新函數 ---
     function showMessage(message, duration = 2500) {
+        if (!messageDisplay) return; // Safegaurd if element not found
         messageDisplay.textContent = message;
         messageDisplay.classList.add('show');
         setTimeout(() => {
@@ -148,6 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updatePlayerPokemonsDisplay() {
+        if (!pokeballSlots) return;
         pokeballSlots.innerHTML = ''; // 清空現有顯示
 
         playerPokemons.forEach(pokemon => {
@@ -168,6 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updatePlayerItemsDisplay() {
+        if (!itemBag) return;
         itemBag.innerHTML = ''; // 清空現有顯示
         let hasItems = false;
         for (const itemId in playerItems) {
@@ -187,44 +225,71 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updatePlayerMoneyDisplay() {
-        currentMoneySpan.textContent = playerMoney;
-        playerMoneyShopSpan.textContent = playerMoney; // 更新商店的金錢顯示
+        if (currentMoneySpan) currentMoneySpan.textContent = playerMoney;
+        if (playerMoneyShopSpan) playerMoneyShopSpan.textContent = playerMoney; // 更新商店的金錢顯示
     }
 
-    // 更新戰鬥中的HP條
+    // 更新戰鬥中的HP條和經驗值條
     function updateBattleHpDisplay() {
-        if (!currentPlayerActivePokemon || !currentOpponentPokemon) return;
+        if (!currentPlayerActivePokemon || !currentOpponentPokemon) {
+            // If no active pokemon, clear sprites or set to default
+            if (playerSprite) playerSprite.src = 'https://placehold.co/100x100/eeeeee/000000?text=我方';
+            if (opponentSprite) opponentSprite.src = 'https://placehold.co/100x100/eeeeee/000000?text=野生';
+            return;
+        }
 
-        playerPokemonNameSpan.textContent = `${currentPlayerActivePokemon.name} Lv.${currentPlayerActivePokemon.level}`;
-        playerHpText.textContent = currentPlayerActivePokemon.currentHp;
-        playerMaxHpText.textContent = currentPlayerActivePokemon.maxHp;
-        const playerHpPercent = (currentPlayerActivePokemon.currentHp / currentPlayerActivePokemon.maxHp) * 100;
-        playerHpBar.style.width = `${playerHpPercent}%`;
-        if (playerHpPercent <= 25) {
-            playerHpBar.style.backgroundColor = '#dc3545'; // Red when low
-        } else if (playerHpPercent <= 50) {
-            playerHpBar.style.backgroundColor = '#ffc107'; // Yellow when medium
-        } else {
-            playerHpBar.style.backgroundColor = '#28a745'; // Green
+        // Update player's Pokemon stats and sprite
+        if (playerPokemonNameSpan && playerHpText && playerMaxHpText && playerHpBar && playerSprite) {
+            playerPokemonNameSpan.textContent = `${currentPlayerActivePokemon.name} Lv.${currentPlayerActivePokemon.level}`;
+            playerHpText.textContent = currentPlayerActivePokemon.currentHp;
+            playerMaxHpText.textContent = currentPlayerActivePokemon.maxHp;
+            const playerHpPercent = (currentPlayerActivePokemon.currentHp / currentPlayerActivePokemon.maxHp) * 100;
+            playerHpBar.style.width = `${playerHpPercent}%`;
+            if (playerHpPercent <= 25) {
+                playerHpBar.style.backgroundColor = '#dc3545'; // Red when low
+            } else if (playerHpPercent <= 50) {
+                playerHpBar.style.backgroundColor = '#ffc107'; // Yellow when medium
+            } else {
+                playerHpBar.style.backgroundColor = '#28a745'; // Green
+            }
+            // Update player sprite (back view)
+            playerSprite.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/${getPokemonSpriteId(currentPlayerActivePokemon.id)}.png`;
+            playerSprite.alt = currentPlayerActivePokemon.name;
         }
 
 
-        opponentNameSpan.textContent = `${currentOpponentPokemon.name} Lv.${currentOpponentPokemon.level}`;
-        opponentHpText.textContent = currentOpponentPokemon.currentHp;
-        opponentMaxHpText.textContent = currentOpponentPokemon.maxHp;
-        const opponentHpPercent = (currentOpponentPokemon.currentHp / currentOpponentPokemon.maxHp) * 100;
-        opponentHpBar.style.width = `${opponentHpPercent}%`;
-        if (opponentHpPercent <= 25) {
-            opponentHpBar.style.backgroundColor = '#dc3545';
-        } else if (opponentHpPercent <= 50) {
-            opponentHpBar.style.backgroundColor = '#ffc107';
-        } else {
-            opponentHpBar.style.backgroundColor = '#28a745';
+        // 更新玩家寶可夢的經驗值條
+        if (playerExpText && playerExpToNextLevelText && playerExpBar) {
+            playerExpText.textContent = currentPlayerActivePokemon.currentExp;
+            playerExpToNextLevelText.textContent = currentPlayerActivePokemon.expToNextLevel;
+            const playerExpPercent = (currentPlayerActivePokemon.currentExp / currentPlayerActivePokemon.expToNextLevel) * 100;
+            playerExpBar.style.width = `${playerExpPercent}%`;
+        }
+
+        // Update opponent's Pokemon stats and sprite
+        if (opponentNameSpan && opponentHpText && opponentMaxHpText && opponentHpBar && opponentSprite) {
+            opponentNameSpan.textContent = `${currentOpponentPokemon.name} Lv.${currentOpponentPokemon.level}`;
+            opponentHpText.textContent = currentOpponentPokemon.currentHp;
+            opponentMaxHpText.textContent = currentOpponentPokemon.maxHp;
+            const opponentHpPercent = (currentOpponentPokemon.currentHp / currentOpponentPokemon.maxHp) * 100;
+            opponentHpBar.style.width = `${opponentHpPercent}%`;
+            if (opponentHpPercent <= 25) {
+                opponentHpBar.style.backgroundColor = '#dc3545';
+            } else if (opponentHpPercent <= 50) {
+                opponentHpBar.style.backgroundColor = '#ffc107';
+            } else {
+                opponentHpBar.style.backgroundColor = '#28a745';
+            }
+            // Update opponent sprite (front view)
+            opponentSprite.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${getPokemonSpriteId(currentOpponentPokemon.id)}.png`;
+            opponentSprite.alt = currentOpponentPokemon.name;
         }
     }
 
     // 顯示寶可夢滿員時的選擇介面
     function showPokemonFullModal(newPokemon) {
+        if (!pokemonFullModal || !newPokemonNameSpan || !currentPokemonsForSelection) return;
+
         newlyAcquiredPokemon = newPokemon;
         newPokemonNameSpan.textContent = newPokemon.name;
         currentPokemonsForSelection.innerHTML = '';
@@ -249,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function hidePokemonFullModal() {
-        pokemonFullModal.classList.add('hidden');
+        if (pokemonFullModal) pokemonFullModal.classList.add('hidden');
         newlyAcquiredPokemon = null;
     }
 
@@ -318,6 +383,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function gainExp(pokemon, exp) {
         pokemon.currentExp += exp;
         showMessage(`${pokemon.name} 獲得了 ${exp} 經驗值！`);
+        updateBattleHpDisplay(); // 即時更新經驗條
 
         while (pokemon.currentExp >= pokemon.expToNextLevel) {
             pokemon.currentExp -= pokemon.expToNextLevel;
@@ -339,6 +405,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 對戰系統邏輯 ---
 
     function startBattle(wildPokemonId) {
+        lastEncounteredWildPokemonId = wildPokemonId; // 記錄本次遭遇的寶可夢 ID
+
         // 從地圖數據獲取野外寶可夢的等級範圍
         const mapInfo = maps.find(m => m.wildPokemons.some(wp => wp.id === wildPokemonId));
         const levelRange = mapInfo.wildPokemons.find(wp => wp.id === wildPokemonId).level;
@@ -378,22 +446,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function endBattle(outcome) {
-        currentOpponentPokemon = null; // 清空對手
-
         // 更新玩家寶可夢狀態，確保從 playerPokemons 中獲取最新的引用
-        currentPlayerActivePokemon = playerPokemons.find(p => p.id === currentPlayerActivePokemon.id);
+        if (currentPlayerActivePokemon) { // 確保有活動寶可夢
+             currentPlayerActivePokemon = playerPokemons.find(p => p.id === currentPlayerActivePokemon.id && p.level === currentPlayerActivePokemon.level);
+        }
 
+
+        // 顯示戰鬥結果訊息
+        let message = '';
         if (outcome === 'win') {
             const expGained = Math.floor(currentOpponentPokemon.baseExp * (1 + (currentOpponentPokemon.level / 10))); // 根據等級調整經驗值
             gainExp(currentPlayerActivePokemon, expGained);
             addMoney(50 + Math.floor(Math.random() * 50 * (currentOpponentPokemon.level / 5))); // 戰勝獲得金錢，與等級掛鉤
-            showMessage(`你戰勝了 Lv.${currentOpponentPokemon.level} ${currentOpponentPokemon.name}！`, 3000);
+            message = `你戰勝了 Lv.${currentOpponentPokemon.level} ${currentOpponentPokemon.name}！`;
         } else if (outcome === 'flee') {
-            showMessage('成功逃跑了！');
+            message = '成功逃跑了！';
         } else if (outcome === 'capture') {
-            // 捕捉成功訊息已在 acquirePokemon 中顯示
+            message = `你成功捕捉了 ${newlyAcquiredPokemon ? newlyAcquiredPokemon.name : currentOpponentPokemon.name}！`;
         } else if (outcome === 'faint') { // 玩家所有寶可夢都倒下了
-            showMessage('你的寶可夢都倒下了，你戰敗了！', 3000);
+            message = '你的寶可夢都倒下了，你戰敗了！';
             // 戰敗懲罰：扣除一半金錢或回寶可夢中心
             playerMoney = Math.floor(playerMoney / 2);
             showMessage('你失去了一半金錢！', 2000);
@@ -401,15 +472,22 @@ document.addEventListener('DOMContentLoaded', () => {
             playerPokemons.forEach(p => p.currentHp = p.maxHp);
         }
 
-        updatePlayerPokemonsDisplay(); // 更新 HP 顯示
+        battleOutcomeMessage.textContent = message; // 設置模態視窗內的訊息
+
+        // 確保在顯示選項前更新所有顯示
+        updatePlayerPokemonsDisplay(); // 更新 HP 和等級顯示
         updatePlayerItemsDisplay();
         updatePlayerMoneyDisplay();
         saveGame(); // 保存遊戲狀態
 
+        // 延遲一下顯示選項，讓玩家看到最終戰鬥訊息
         setTimeout(() => {
-            showScreen('map-selection'); // 返回地圖選擇
+            battleScreen.classList.add('hidden'); // 先隱藏戰鬥畫面
+            battleEndOptionsModal.classList.remove('hidden'); // 顯示選項模態視窗
             battleTurnInProgress = false; // 確保重置狀態
-        }, 1500); // 延遲一下再切換畫面
+        }, 1500);
+
+        currentOpponentPokemon = null; // 清空對手，準備下次戰鬥
     }
 
     function setBattleMenu(menuType) {
@@ -435,7 +513,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const existingMoveButtons = battleActions.querySelectorAll('button:not(#item-button):not(#switch-pokemon-button):not(#run-button)');
         existingMoveButtons.forEach(btn => btn.remove());
 
-        // 重新創建攻擊按鈕，現在是招式按鈕
+        // 重新創建攻擊按鈕，現在是招式按式
         const itemBtn = document.getElementById('item-button');
         const switchBtn = document.getElementById('switch-pokemon-button');
         const runBtn = document.getElementById('run-button');
@@ -463,13 +541,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (battleTurnInProgress) return; // 防止重複點擊
         battleTurnInProgress = true;
 
-        if (currentPlayerActivePokemon.currentHp <= 0) {
-            showMessage(`${currentPlayerActivePokemon.name} 已無法戰鬥！請更換寶可夢。`, 2000);
+        if (!currentPlayerActivePokemon || currentPlayerActivePokemon.currentHp <= 0) {
+            showMessage(`${currentPlayerActivePokemon ? currentPlayerActivePokemon.name : '你的寶可夢'} 已無法戰鬥！請更換寶可夢。`, 2000);
             setBattleMenu('switch');
             battleTurnInProgress = false;
             return;
         }
-        if (currentOpponentPokemon.currentHp <= 0) {
+        if (!currentOpponentPokemon || currentOpponentPokemon.currentHp <= 0) {
             endBattle('win');
             battleTurnInProgress = false;
             return;
@@ -508,6 +586,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             battleMessage.textContent += `對 ${currentOpponentPokemon.name} 造成了 ${damage} 傷害！`;
             updateBattleHpDisplay();
+
+            // 處理招式效果 (範例：吐絲降低速度)
+            if (move.effect === 'lowerSpeed') {
+                if (Math.random() < 0.5) { // 50% 機率成功
+                    currentOpponentPokemon.speed = Math.max(1, Math.floor(currentOpponentPokemon.speed * 0.8));
+                    battleMessage.textContent += ` ${currentOpponentPokemon.name} 的速度降低了！`;
+                }
+            }
+
         } else if (action.type === 'item') {
             if (playerItems[action.itemId] <= 0) {
                 showMessage(`你沒有 ${allItems[action.itemId].name} 了！`, 1500);
@@ -573,7 +660,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function opponentTurn() {
-        if (currentOpponentPokemon.currentHp <= 0) { // 再次檢查，防止延遲期間寶可夢倒下
+        if (!currentOpponentPokemon || currentOpponentPokemon.currentHp <= 0) { // 再次檢查，防止延遲期間寶可夢倒下
             battleTurnInProgress = false;
             endBattle('win');
             return;
@@ -707,211 +794,252 @@ document.addEventListener('DOMContentLoaded', () => {
         const levelFactor = (pokemon.level / currentPlayerActivePokemon.level); // 對手等級越高，越難抓
 
         // 基礎捕捉率 * 寶貝球效果 * (1 - HP百分比 + 一點隨機性) / 等級因子
-        const effectiveCatchRate = pokemon.catchRate * pokeballEffect * (1 - hpFactor + 0.1) / (levelFactor > 1 ? levelFactor : 1);
+        const effectiveCatchRate = pokemon.catchRate * pokeballEffect * (1 - hpFactor + 0.1) / (levelFactor > 1 ? levelFactor : 1); // 確保 levelFactor 至少為 1，避免除以零或超級高的捕捉率
 
-        if (Math.random() < effectiveCatchRate) {
-            acquirePokemon(pokemon); // 成功捕捉
-            endBattle('capture');
+        battleMessage.textContent = `你投出了寶貝球！`;
+
+        setTimeout(() => {
+            if (Math.random() < effectiveCatchRate) {
+                battleMessage.textContent = `恭喜！你抓到了 Lv.${pokemon.level} ${pokemon.name}！`;
+                acquirePokemon(pokemon); // 將捕獲的寶可夢加入隊伍或背包
+                // 捕捉成功後，endBattle會處理戰鬥結束
+                endBattle('capture');
+            } else {
+                battleMessage.textContent = `${pokemon.name} 掙脫了！`;
+                // 捕捉失敗後，輪到對手行動
+                setTimeout(opponentTurn, 1000);
+            }
+        }, 1500);
+    }
+
+    // --- 遊戲初始化與事件監聽 ---
+    function initializeGame() {
+        // 檢查是否有存檔
+        loadGame();
+
+        if (playerPokemons.length === 0) {
+            // 如果沒有寶可夢 (新遊戲或沒有存檔)，顯示初始選擇畫面
+            showScreen('starter-selection');
+            renderStarterPokeballs();
+            playerMoney = 1000; // 贈送初始金錢
+            acquireItem('pokeball', 5); // 贈送初始寶貝球
+            acquireItem('potion', 2); // 贈送初始傷藥
         } else {
-            showMessage(`捕捉失敗了！${pokemon.name} 掙脫了！`);
+            // 如果有存檔，直接進入地圖選擇畫面
+            showScreen('map-selection');
+            // 確保有出戰寶可夢，如果存檔後沒有，則選第一個可用的
+            if (!currentPlayerActivePokemon || currentPlayerActivePokemon.currentHp <= 0) {
+                currentPlayerActivePokemon = playerPokemons.find(p => p.currentHp > 0) || playerPokemons[0];
+            }
+            updatePlayerPokemonsDisplay();
+            updatePlayerItemsDisplay();
+            updatePlayerMoneyDisplay();
         }
     }
 
-    // --- 商店系統邏輯 ---
-    function renderShopItems() {
-        shopItemsGrid.innerHTML = '';
-        shopItems.forEach(shopItem => {
-            const item = allItems[shopItem.itemId];
-            if (!item) return; // 防止資料錯誤
-
-            const div = document.createElement('div');
-            div.classList.add('shop-item');
-            div.innerHTML = `
-                <h4>${item.name}</h4>
-                <p>價格: ${shopItem.price} 金錢</p>
-                <p>${item.description}</p>
-                <button data-item-id="${shopItem.itemId}" data-price="${shopItem.price}">購買</button>
-            `;
-            shopItemsGrid.appendChild(div);
-        });
-
-        document.querySelectorAll('.shop-item button').forEach(button => {
-            button.addEventListener('click', (event) => {
-                const itemId = event.target.dataset.itemId;
-                const price = parseInt(event.target.dataset.price);
-                if (deductMoney(price)) {
-                    acquireItem(itemId, 1); // 購買一個
-                    showMessage(`購買了 ${allItems[itemId].name}！`);
-                }
-            });
-        });
-    }
-
-    // --- 數據持久化 ---
     function saveGame() {
-        const gameData = {
+        const gameState = {
             playerPokemons: playerPokemons,
             pokemonStorage: pokemonStorage,
             playerItems: playerItems,
             playerMoney: playerMoney,
+            currentPlayerActivePokemonId: currentPlayerActivePokemon ? currentPlayerActivePokemon.id : null,
+            currentPlayerActivePokemonLevel: currentPlayerActivePokemon ? currentPlayerActivePokemon.level : null, // 保存等級以區分同名寶可夢
         };
-        localStorage.setItem('pokemonGameData', JSON.stringify(gameData));
-        console.log('遊戲已保存！');
+        localStorage.setItem('pokemonGameSave', JSON.stringify(gameState));
     }
 
     function loadGame() {
-        const savedData = localStorage.getItem('pokemonGameData');
-        if (savedData) {
-            const gameData = JSON.parse(savedData);
-            playerPokemons = gameData.playerPokemons || [];
-            pokemonStorage = gameData.pokemonStorage || [];
-            playerItems = gameData.playerItems || {};
-            playerMoney = gameData.playerMoney || 0;
+        const savedState = localStorage.getItem('pokemonGameSave');
+        if (savedState) {
+            const gameState = JSON.parse(savedState);
+            playerPokemons = gameState.playerPokemons;
+            pokemonStorage = gameState.pokemonStorage;
+            playerItems = gameState.playerItems;
+            playerMoney = gameState.playerMoney;
 
-            // 確保加載後有出戰寶可夢 (選隊伍中第一個活著的)
-            currentPlayerActivePokemon = playerPokemons.find(p => p.currentHp > 0);
+            // 恢復 currentPlayerActivePokemon
+            if (gameState.currentPlayerActivePokemonId) {
+                currentPlayerActivePokemon = playerPokemons.find(
+                    p => p.id === gameState.currentPlayerActivePokemonId && p.level === gameState.currentPlayerActivePokemonLevel
+                );
+                // 如果找不到（例如寶可夢被替換了），則嘗試找第一個可用的
+                if (!currentPlayerActivePokemon || currentPlayerActivePokemon.currentHp <= 0) {
+                    currentPlayerActivePokemon = playerPokemons.find(p => p.currentHp > 0) || playerPokemons[0];
+                }
+            } else if (playerPokemons.length > 0) {
+                currentPlayerActivePokemon = playerPokemons[0]; // 如果沒有記錄出戰寶可夢，選第一個
+            }
 
-            showMessage('遊戲已載入！', 2000);
+            showMessage('遊戲已讀取！');
+            updatePlayerPokemonsDisplay();
+            updatePlayerItemsDisplay();
+            updatePlayerMoneyDisplay();
             return true;
         }
         return false;
     }
 
-    // --- 初始化函數 ---
-    function initializeGame() {
-        if (!loadGame()) { // 如果沒有存檔，給予初始資源
-            playerMoney = 1000; // 初始金錢
-            acquireItem('pokeball', 5);
-            acquireItem('potion', 2);
-            showMessage('開始新的冒險！', 3000);
-        }
-        updatePlayerPokemonsDisplay();
-        updatePlayerItemsDisplay();
-        updatePlayerMoneyDisplay();
-    }
-
-    // --- 事件監聽器 ---
-
-    // 開始遊戲按鈕
-    startButton.addEventListener('click', () => {
-        startScreen.classList.add('hidden');
-        gameScreen.classList.remove('hidden');
-        if (playerPokemons.length === 0) { // 只有在沒有寶可夢的情況下才顯示選擇初始寶可夢
-            showScreen('starter-selection');
-            setupStarterChoices();
-        } else { // 如果有存檔，直接進入地圖選擇
-            showScreen('map-selection');
-            setupMapButtons();
-        }
-        initializeGame(); // 載入遊戲數據
-    });
-
-    // 初始寶可夢選擇
-    function setupStarterChoices() {
+    // 選擇初始寶可夢
+    function renderStarterPokeballs() {
         starterPokeballsContainer.innerHTML = '';
-        ['charmander', 'squirtle', 'bulbasaur'].forEach(key => {
-            const pokemon = allPokemons[key];
+        const starters = ['charmander', 'squirtle', 'bulbasaur'];
+        starters.forEach(id => {
+            const pokemon = allPokemons[id];
             const div = document.createElement('div');
             div.classList.add('pokeball-choice');
-            const p = document.createElement('p');
-            p.textContent = pokemon.name;
-            const pokeballText = document.createElement('span');
-            pokeballText.classList.add('pokeball-text');
-            pokeballText.textContent = '(寶貝球)';
-
-            div.appendChild(p);
-            div.appendChild(pokeballText);
-            div.dataset.pokemonId = pokemon.id;
-
-            starterPokeballsContainer.appendChild(div);
-
+            div.dataset.pokemonId = id;
+            div.innerHTML = `<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${getPokemonSpriteId(id)}.png" alt="${pokemon.name}" class="pokemon-sprite-small"><span>${pokemon.name}</span>`;
             div.addEventListener('click', () => {
-                acquirePokemon(pokemon); // 選擇初始寶可夢並添加到隊伍
+                acquirePokemon(pokemon);
                 starterSelection.classList.add('hidden');
-                showScreen('map-selection'); // 進入地圖選擇
-                setupMapButtons(); // 設置地圖按鈕
+                showScreen('map-selection');
             });
+            starterPokeballsContainer.appendChild(div);
         });
     }
 
-    // 設置地圖按鈕
-    function setupMapButtons() {
+    // 獲取寶可夢圖片 ID 的輔助函數 (您可以自己維護圖片，或者使用 PokeAPI 的 ID)
+    function getPokemonSpriteId(pokemonId) {
+        switch (pokemonId) {
+            case 'charmander': return 4;
+            case 'squirtle': return 7;
+            case 'bulbasaur': return 1;
+            case 'pidgey': return 16;
+            case 'rattata': return 19;
+            case 'zubat': return 41;
+            case 'caterpie': return 10;
+            case 'weedle': return 13;
+            case 'ekans': return 23;
+            case 'pikachu': return 25;
+            default: return 0; // 預設或未知寶可夢圖片
+        }
+    }
+
+
+    // 渲染地圖格子
+    function renderMapGrid() {
         mapGrid.innerHTML = '';
-        maps.forEach((map, index) => {
-            const button = document.createElement('button');
-            button.classList.add('map-button');
-            button.textContent = map.name;
-            button.addEventListener('click', () => {
-                // 隨機選擇地圖中的一種寶可夢
-                const randomWildPokemonInfo = map.wildPokemons[Math.floor(Math.random() * map.wildPokemons.length)];
-                startBattle(randomWildPokemonInfo.id);
+        maps.forEach(map => {
+            const div = document.createElement('div');
+            div.classList.add('map-cell');
+            div.textContent = map.name;
+            div.dataset.mapId = map.id;
+            div.addEventListener('click', () => {
+                // 從該地圖可遭遇的寶可夢中隨機選擇一隻
+                const possibleEncounters = map.wildPokemons;
+                if (possibleEncounters.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * possibleEncounters.length);
+                    const wildPokemonData = possibleEncounters[randomIndex];
+                    startBattle(wildPokemonData.id);
+                } else {
+                    showMessage('這個區域沒有寶可夢！', 1500);
+                }
             });
-            mapGrid.appendChild(button);
+            mapGrid.appendChild(div);
         });
     }
 
-    // 前往商店按鈕
+    // 渲染商店商品
+    function renderShopItems() {
+        shopItemsGrid.innerHTML = '';
+        shopItems.forEach(shopItem => {
+            const item = allItems[shopItem.itemId];
+            if (item) {
+                const div = document.createElement('div');
+                div.classList.add('shop-item');
+                div.innerHTML = `
+                    <h3>${item.name}</h3>
+                    <p>${item.description}</p>
+                    <p>價格: ${shopItem.price} 金錢</p>
+                    <button class="buy-button" data-item-id="${shopItem.itemId}" data-item-price="${shopItem.price}">購買</button>
+                `;
+                shopItemsGrid.appendChild(div);
+            }
+        });
+
+        document.querySelectorAll('.buy-button').forEach(button => {
+            button.addEventListener('click', (event) => {
+                const itemId = event.target.dataset.itemId;
+                const itemPrice = parseInt(event.target.dataset.itemPrice);
+                if (deductMoney(itemPrice)) {
+                    acquireItem(itemId, 1);
+                }
+            });
+        });
+    }
+
+    // --- 主要事件監聽器 ---
+    startButton.addEventListener('click', () => {
+        startScreen.classList.add('hidden');
+        initializeGame();
+    });
+
     goToShopButton.addEventListener('click', () => {
         showScreen('shop-screen');
         renderShopItems();
     });
 
-    // 返回地圖按鈕 (從商店)
     backToMapButton.addEventListener('click', () => {
         showScreen('map-selection');
     });
 
-    // --- 對戰動作按鈕 ---
-    // 攻擊按鈕已經被招式按鈕替換，此處不需要直接綁定
     itemButton.addEventListener('click', () => setBattleMenu('items'));
     switchPokemonButton.addEventListener('click', () => setBattleMenu('switch'));
     runButton.addEventListener('click', () => playerTurn('run'));
 
-    // 返回對戰主選單按鈕
     backToActionsButtons.forEach(button => {
         button.addEventListener('click', () => setBattleMenu('actions'));
     });
 
-    // 處理寶可夢滿員 modal 的確認替換
     confirmReplacementButton.addEventListener('click', () => {
         const selectedPokemonDiv = document.querySelector('.selectable-pokemon.selected');
-        if (selectedPokemonDiv && newlyAcquiredPokemon) {
+        if (selectedPokemonDiv) {
             const indexToReplace = parseInt(selectedPokemonDiv.dataset.index);
-            const replacedPokemon = playerPokemons[indexToReplace];
+            const oldPokemon = playerPokemons[indexToReplace];
 
-            pokemonStorage.push(replacedPokemon);
-            showMessage(`${replacedPokemon.name} 被放進了寶可夢背包。`);
-            console.log('寶可夢背包:', pokemonStorage);
+            // 將舊寶可夢放入背包
+            pokemonStorage.push(oldPokemon);
+            showMessage(`${oldPokemon.name} 被送到了寶可夢背包。`, 2000);
 
+            // 替換為新寶可夢
             playerPokemons[indexToReplace] = newlyAcquiredPokemon;
-            showMessage(`隊伍中的 ${replacedPokemon.name} 被 ${newlyAcquiredPokemon.name} 替換了！`, 2000);
+            showMessage(`你將 ${newlyAcquiredPokemon.name} 加入了隊伍！`, 2000);
+
+            hidePokemonFullModal();
             updatePlayerPokemonsDisplay();
-            hidePokemonFullModal();
-            saveGame(); // 保存遊戲狀態
-        } else if (newlyAcquiredPokemon) {
-            showMessage('請選擇一隻寶可夢進行替換。', 1500);
+            saveGame();
+        } else {
+            showMessage('請選擇一隻寶可夢來替換。', 1500);
         }
     });
 
-    // 處理寶可夢滿員 modal 的取消 (將新寶可夢直接放入背包)
     cancelReplacementButton.addEventListener('click', () => {
-        if (newlyAcquiredPokemon) {
-            pokemonStorage.push(newlyAcquiredPokemon);
-            showMessage(`${newlyAcquiredPokemon.name} 被直接放進了寶可夢背包。`, 2000);
-            console.log('寶可夢背包:', pokemonStorage);
-            hidePokemonFullModal();
-            saveGame(); // 保存遊戲狀態
+        pokemonStorage.push(newlyAcquiredPokemon);
+        showMessage(`${newlyAcquiredPokemon.name} 被直接送到了寶可夢背包。`, 2000);
+        hidePokemonFullModal();
+        saveGame();
+    });
+
+    // 戰鬥結束選項按鈕事件監聽器
+    returnToMapButton.addEventListener('click', () => {
+        battleEndOptionsModal.classList.add('hidden'); // 隱藏模態視窗
+        showScreen('map-selection'); // 返回地圖選擇畫面
+    });
+
+    encounterAgainButton.addEventListener('click', () => {
+        battleEndOptionsModal.classList.add('hidden'); // 隱藏模態視窗
+        if (lastEncounteredWildPokemonId) {
+            startBattle(lastEncounteredWildPokemonId); // 再次開始戰鬥
+        } else {
+            // 這通常不會發生，因為 startBattle 會設置 lastEncounteredWildPokemonId
+            showMessage('無法再次遇敵，返回地圖。', 2000);
+            showScreen('map-selection');
         }
     });
 
-    // 確保初始載入時設定好初始寶可夢選擇畫面
-    // 在 DOMContentLoaded 時，先嘗試載入遊戲，如果沒有存檔，再設置初始寶可夢選擇
+
+    // 遊戲開始時調用
+    renderMapGrid(); // 先渲染地圖格子，因為它不依賴遊戲狀態
     initializeGame();
-    if (playerPokemons.length === 0) { // 如果沒有任何寶可夢 (新遊戲)
-        setupStarterChoices();
-    } else { // 如果有寶可夢 (載入遊戲)
-        // 確保初始畫面是開始畫面，等待玩家點擊開始
-        startScreen.classList.remove('hidden');
-        gameScreen.classList.add('hidden');
-    }
 });

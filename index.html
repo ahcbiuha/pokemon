@@ -1,94 +1,142 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>神寶奇遇</title>
-    <link rel="stylesheet" href="style.css">
+    <title>我的寶可夢冒險</title>
+    <!-- 引入外部 CSS 檔案 -->
+    <link rel="stylesheet" href="style.css"> 
 </head>
 <body>
-    <div id="start-screen" class="game-container">
-        <h1>神寶奇遇</h1>
-        <button id="start-button">開始遊戲</button>
-    </div>
+    <div class="game-container">
+        <!-- Start Screen -->
+        <section id="start-screen" class="game-section">
+            <h1>我的寶可夢冒險</h1>
+            <button id="start-button">開始遊戲</button>
+        </section>
 
-    <div id="game-screen" class="game-container hidden">
-        <div id="starter-selection" class="game-section">
-            <h2>選擇你的第一隻寶可夢！</h2>
+        <!-- Starter Selection Screen -->
+        <section id="starter-selection" class="game-section hidden">
+            <h2>選擇你的初始寶可夢！</h2>
             <div id="starter-pokeballs">
-                </div>
-        </div>
+                <!-- Starter choices will be rendered here by JS -->
+            </div>
+        </section>
 
-        <div id="map-selection" class="game-section hidden">
-            <h2>選擇地圖進行探索</h2>
-            <div id="map-grid">
+        <!-- Game Screen (Map Selection & Player Info) -->
+        <section id="game-screen" class="game-section hidden">
+            <div id="map-selection" class="game-section">
+                <h2>選擇你的目的地</h2>
+                <div id="map-grid">
+                    <!-- Map cells will be rendered here by JS -->
                 </div>
-            <button id="go-to-shop-button">前往商店</button>
-        </div>
+                <button id="go-to-shop-button">前往商店</button>
+            </div>
 
-        <div id="battle-screen" class="game-section hidden">
-            <h2 id="battle-message">戰鬥開始！</h2>
-            <div class="battle-arena">
-                <div class="pokemon-display opponent">
-                    <span id="opponent-name"></span>
-                    <div class="hp-bar-container">HP: <span id="opponent-hp-text"></span>/<span id="opponent-max-hp-text"></span> <div class="hp-bar" id="opponent-hp-bar"></div></div>
+            <div id="game-info">
+                <h3>我的寶可夢</h3>
+                <div id="pokeball-slots">
+                    <!-- Owned pokeballs will be rendered here by JS -->
                 </div>
-                <div class="pokemon-display player">
-                    <span id="player-pokemon-name"></span>
-                    <div class="hp-bar-container">HP: <span id="player-hp-text"></span>/<span id="player-max-hp-text"></span> <div class="hp-bar" id="player-hp-bar"></div></div>
+                <h3>我的背包</h3>
+                <ul id="item-bag">
+                    <!-- Items will be rendered here by JS -->
+                </ul>
+                <h3>金錢: <span id="current-money">0</span></h3>
+            </div>
+        </section>
+
+        <!-- Battle Screen -->
+        <section id="battle-screen" class="game-section hidden">
+            <div class="battle-area">
+                <div class="pokemon-display opponent-pokemon-display">
+                    <img src="https://placehold.co/100x100/eeeeee/000000?text=野生" alt="Opponent Pokemon" class="pokemon-sprite" id="opponent-sprite"> <!-- Added ID for JS update -->
+                    <div class="pokemon-stats">
+                        <span id="opponent-name"></span>
+                        <div class="hp-bar-container">
+                            HP: <span id="opponent-hp-text"></span>/<span id="opponent-max-hp-text"></span>
+                            <div class="hp-bar" id="opponent-hp-bar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pokemon-display player-pokemon-display">
+                    <img src="https://placehold.co/100x100/eeeeee/000000?text=我方" alt="Player Pokemon" class="pokemon-sprite" id="player-sprite"> <!-- Added ID for JS update -->
+                    <div class="pokemon-stats">
+                        <span id="player-pokemon-name"></span>
+                        <div class="hp-bar-container">
+                            HP: <span id="player-hp-text"></span>/<span id="player-max-hp-text"></span>
+                            <div class="hp-bar" id="player-hp-bar"></div>
+                        </div>
+                        <!-- 經驗值條 -->
+                        <div class="exp-bar-container">
+                            EXP: <span id="player-exp-text">0</span>/<span id="player-exp-to-next-level-text">100</span>
+                            <div class="exp-bar" id="player-exp-bar"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            <div id="battle-message">野生寶可夢出現了！</div>
+
             <div id="battle-actions">
-                <button id="attack-button">攻擊</button>
+                <!-- Attack buttons will be dynamically rendered here -->
                 <button id="item-button">道具</button>
                 <button id="switch-pokemon-button">換寶可夢</button>
                 <button id="run-button">逃跑</button>
             </div>
+
             <div id="battle-item-menu" class="hidden">
-                <h3>選擇道具:</h3>
-                <ul id="battle-item-list"></ul>
+                <ul id="battle-item-list">
+                    <!-- Battle items will be rendered here -->
+                </ul>
                 <button class="back-to-actions">返回</button>
             </div>
+
             <div id="battle-switch-menu" class="hidden">
-                <h3>選擇寶可夢:</h3>
-                <div id="battle-switch-list"></div>
+                <div id="battle-switch-list">
+                    <!-- Battle switchable pokemons will be rendered here -->
+                </div>
                 <button class="back-to-actions">返回</button>
             </div>
-        </div>
+        </section>
 
-        <div id="shop-screen" class="game-section hidden">
+        <!-- Shop Screen -->
+        <section id="shop-screen" class="game-section hidden">
             <h2>商店</h2>
-            <p>金錢: <span id="player-money-shop">0</span></p>
+            <p>你的金錢: <span id="player-money-shop">0</span></p>
             <div id="shop-items-grid">
-                </div>
+                <!-- Shop items will be rendered here by JS -->
+            </div>
             <button id="back-to-map-button">返回地圖</button>
-        </div>
+        </section>
 
-        <div id="game-info">
-            <div id="player-pokemons-section">
-                <h2>我的寶可夢 (最多 6 隻)</h2>
-                <div id="pokeball-slots"></div>
-            </div>
-            <div id="player-items-section">
-                <h2>我的背包</h2>
-                <ul id="item-bag"></ul>
-            </div>
-            <div id="player-money-display">
-                <h2>金錢: <span id="current-money">0</span></h2>
-            </div>
-        </div>
+        <!-- Global Message Display -->
+        <div id="message-display"></div>
 
+        <!-- Pokemon Full Modal -->
         <div id="pokemon-full-modal" class="modal hidden">
             <div class="modal-content">
-                <h3>寶可夢已滿！請選擇一隻放入寶可夢背包：</h3>
-                <div id="current-pokemons-for-selection"></div>
-                <p>新獲得：<span id="new-pokemon-name"></span></p>
-                <button id="confirm-replacement">確定替換</button>
-                <button id="cancel-replacement">放入寶可夢背包</button>
+                <h2>隊伍已滿！</h2>
+                <p>你抓到了 <span id="new-pokemon-name"></span>，但你的隊伍已滿。你想將它替換掉哪隻寶可夢？</p>
+                <div id="current-pokemons-for-selection">
+                    <!-- Current pokemons will be rendered here -->
+                </div>
+                <button id="confirm-replacement">確認替換</button>
+                <button id="cancel-replacement">取消 (送入背包)</button>
             </div>
         </div>
 
-        <div id="message-display"></div>
+        <!-- Battle End Options Modal -->
+        <div id="battle-end-options-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>戰鬥結束</h2>
+                <p id="battle-outcome-message"></p>
+                <button id="return-to-map-button">返回地圖</button>
+                <button id="encounter-again-button">再次遇敵</button>
+            </div>
+        </div>
+
     </div>
 
     <script src="script.js"></script>

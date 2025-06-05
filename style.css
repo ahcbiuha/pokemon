@@ -1,5 +1,9 @@
+/* 字體導入 */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap'); /* 像素風格字體 */
+/* 如果您不使用'Press Start 2P'，請使用 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; */
+
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Press Start 2P', cursive, sans-serif; /* 像素風格字體 */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -7,6 +11,7 @@ body {
     background: linear-gradient(to right, #6dd5ed, #2193b0); /* 藍色漸變背景 */
     margin: 0;
     color: #333;
+    overflow: hidden; /* 防止滾動條 */
 }
 
 .game-container {
@@ -19,6 +24,10 @@ body {
     max-width: 900px;
     box-sizing: border-box;
     position: relative;
+    display: flex; /* 使用 flexbox 佈局 */
+    flex-direction: column; /* 垂直排列子元素 */
+    min-height: 600px; /* 最小高度 */
+    gap: 20px; /* 子元素之間的間距 */
 }
 
 #start-screen h1 {
@@ -51,7 +60,11 @@ body {
 }
 
 .game-section {
-    margin-bottom: 30px;
+    flex-grow: 1; /* 讓內容區塊可以佔用剩餘空間 */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
 #game-screen h2 {
@@ -78,7 +91,7 @@ body {
     background-color: #f9f9f9;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     width: 150px;
-    height: 100px;
+    height: 100px; /* 固定高度，避免圖片未載入時的跳動 */
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -91,7 +104,7 @@ body {
     box-shadow: 0 6px 12px rgba(0, 123, 255, 0.2);
 }
 
-.pokeball-choice p {
+.pokeball-choice span { /* Changed from p to span as per HTML structure */
     font-size: 1.2em;
     font-weight: bold;
     color: #555;
@@ -103,8 +116,43 @@ body {
     color: #888;
     margin-top: 5px;
 }
+.pokemon-sprite-small {
+    width: 80px;
+    height: 80px;
+    image-rendering: pixelated; /* 保持像素風格 */
+    margin-bottom: 5px;
+}
 
-/* --- Map Selection --- */
+/* --- Map Selection and Game Info Layout --- */
+#game-screen {
+    display: flex;
+    flex-direction: row; /* 水平排列地圖和玩家資訊 */
+    justify-content: space-around;
+    align-items: flex-start;
+    flex-grow: 1; /* 讓 game-screen 佔用空間 */
+    gap: 20px; /* 地圖和資訊欄之間的間距 */
+}
+#map-selection {
+    flex: 2; /* 地圖佔用更多空間 */
+    margin-bottom: 0; /* 移除額外間距 */
+    padding-right: 20px;
+    border-right: 1px solid #eee;
+}
+#game-info {
+    flex: 1; /* 資訊欄佔用較少空間 */
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding-left: 20px;
+    text-align: left; /* 讓文字靠左對齊 */
+}
+#game-info h3 {
+    margin-top: 0;
+    color: #007bff;
+    font-size: 1.5em;
+}
+
+
 #map-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr); /* 3x3 grid for 9 maps */
@@ -113,7 +161,7 @@ body {
     max-width: 600px;
 }
 
-.map-button {
+.map-cell { /* Renamed from .map-button for clarity based on original HTML */
     padding: 25px 15px;
     font-size: 1.3em;
     background-color: #f0f0f0;
@@ -121,11 +169,66 @@ body {
     border-radius: 10px;
     cursor: pointer;
     transition: background-color 0.3s, border-color 0.3s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    min-height: 80px; /* 確保格子高度 */
 }
 
-.map-button:hover {
+.map-cell:hover {
     background-color: #e0e0e0;
     border-color: #007bff;
+}
+
+#pokeball-slots, #item-bag {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 15px;
+    background-color: #fdfdfd;
+}
+
+#pokeball-slots {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 兩列顯示寶可夢 */
+    gap: 10px;
+}
+
+.owned-pokeball {
+    border: 1px solid #a0a0a0;
+    border-radius: 5px;
+    padding: 8px;
+    background-color: #e0e0e0;
+    text-align: center;
+    font-size: 0.9em;
+    line-height: 1.3;
+}
+
+.owned-pokeball.empty {
+    background-color: #f0f0f0;
+    color: #888;
+    border-style: dashed;
+}
+
+#item-bag ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#item-bag li {
+    padding: 5px 0;
+    border-bottom: 1px dotted #eee;
+}
+#item-bag li:last-child {
+    border-bottom: none;
+}
+
+#current-money {
+    font-weight: bold;
+    color: #007bff;
+    font-size: 1.2em;
 }
 
 /* --- Battle Screen --- */
@@ -134,60 +237,121 @@ body {
     border: 2px solid #28a745;
     padding: 20px;
     border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    height: 100%;
+    box-sizing: border-box;
 }
 
-.battle-arena {
+.battle-area { /* Renamed from .battle-arena for consistency with JS */
+    width: 100%;
     display: flex;
     justify-content: space-between;
     align-items: flex-end; /* Align HP bars to bottom */
     margin: 30px 0;
     position: relative;
     min-height: 150px; /* Space for Pokémon representation */
+    width: 100%;
 }
 
 .pokemon-display {
     width: 45%;
     text-align: center;
-    font-size: 1.5em;
+    font-size: 1.2em;
     font-weight: bold;
     padding: 10px;
     border-radius: 8px;
     background-color: rgba(255, 255, 255, 0.8);
     border: 1px solid #ddd;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    display: flex; /* 使內容垂直居中 */
+    flex-direction: column;
+    align-items: center;
 }
 
-.pokemon-display.opponent {
+.pokemon-display.opponent-pokemon-display {
     align-self: flex-start; /* Opponent at top left */
     margin-left: 20px;
     margin-top: 20px;
 }
-.pokemon-display.player {
+.pokemon-display.player-pokemon-display {
     align-self: flex-end; /* Player at bottom right */
     margin-right: 20px;
     margin-bottom: 20px;
 }
 
-.hp-bar-container {
+.pokemon-sprite {
+    width: 100px; /* 調整圖片大小 */
+    height: 100px;
+    image-rendering: pixelated;
+    margin-bottom: 10px;
+}
+
+.pokemon-stats {
+    width: 90%; /* 統計資訊寬度 */
+    text-align: left;
+}
+
+.hp-bar-container, .exp-bar-container {
     background-color: #ccc;
     border: 1px solid #999;
     height: 20px;
-    width: 80%;
-    margin: 10px auto;
+    width: 100%;
+    margin: 5px 0;
     border-radius: 5px;
     overflow: hidden;
     display: flex;
     align-items: center;
     font-size: 0.7em;
     color: #444;
+    position: relative;
 }
 
 .hp-bar {
     height: 100%;
     background-color: #28a745; /* Green HP bar */
     width: 100%; /* Default full width */
-    transition: width 0.5s ease-in-out;
+    transition: width 0.5s ease-in-out, background-color 0.3s ease;
     border-radius: 5px;
+}
+/* 經驗值條樣式 */
+.exp-bar-container {
+    height: 10px; /* 經驗值條高度 */
+    margin-top: 10px;
+}
+.exp-bar {
+    height: 100%;
+    width: 0%; /* 初始為 0% */
+    background-color: #337ab7; /* 藍色 */
+    border-radius: 5px;
+    transition: width 0.3s ease-in-out; /* 平滑過渡效果 */
+}
+
+
+#battle-message {
+    background-color: #e9ecef;
+    border: 2px solid #6c757d;
+    border-radius: 8px;
+    padding: 15px;
+    width: 90%;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #444;
+}
+
+#battle-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    width: 90%;
 }
 
 #battle-actions button,
@@ -195,19 +359,37 @@ body {
 #battle-switch-menu button {
     padding: 15px 25px;
     font-size: 1.2em;
-    margin: 10px;
+    margin: 0; /* Remove margin from individual buttons here as gap handles it */
     background-color: #007bff;
     color: white;
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
 }
 
 #battle-actions button:hover,
 #battle-item-menu button:hover,
 #battle-switch-menu button:hover {
     background-color: #0056b3;
+    transform: translateY(-1px);
+}
+
+.back-to-actions {
+    background-color: #6c757d !important;
+}
+.back-to-actions:hover {
+    background-color: #5a6268 !important;
+}
+
+#battle-item-menu, #battle-switch-menu {
+    width: 90%;
+    background-color: #f8f9fa;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    padding: 15px;
+    box-sizing: border-box;
 }
 
 #battle-item-menu ul {
@@ -221,17 +403,18 @@ body {
 
 #battle-item-menu li,
 .battle-switch-pokemon-item {
-    background-color: #f0f0f0;
+    background-color: #e9ecef;
     padding: 10px 15px;
     border: 1px solid #ddd;
     border-radius: 5px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 #battle-item-menu li:hover,
 .battle-switch-pokemon-item:hover {
-    background-color: #e9e9e9;
+    background-color: #dee2e6;
+    transform: translateY(-1px);
 }
 
 #battle-switch-list {
@@ -248,12 +431,19 @@ body {
 }
 
 /* --- Shop Screen --- */
+#shop-screen {
+    flex-grow: 1; /* 讓商店螢幕佔用空間 */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
 #shop-items-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 20px;
     margin: 20px auto;
     max-width: 700px;
+    width: 100%; /* 確保網格填滿可用寬度 */
 }
 
 .shop-item {
@@ -265,213 +455,128 @@ body {
     text-align: center;
 }
 
-.shop-item h4 {
+.shop-item h3 {
     margin-top: 0;
     color: #333;
 }
 
 .shop-item p {
-    font-size: 1.1em;
+    font-size: 0.9em;
     color: #666;
-    margin-bottom: 10px;
 }
 
-.shop-item button {
-    padding: 8px 15px;
-    font-size: 1em;
-    background-color: #17a2b8; /* Teal color for shop buttons */
+.shop-item .buy-button {
+    background-color: #28a745;
     color: white;
     border: none;
     border-radius: 5px;
+    padding: 8px 15px;
     cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.shop-item button:hover {
-    background-color: #138496;
-}
-
-
-/* --- Game Info (Player's status) --- */
-#game-info {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 40px;
-    flex-wrap: wrap;
-    gap: 30px;
-}
-
-#player-pokemons-section, #player-items-section, #player-money-display {
-    flex: 1;
-    min-width: 250px;
-    background-color: #f0f8ff;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.05);
-}
-
-#pokeball-slots {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-top: 20px;
-    flex-wrap: wrap;
-    min-height: 100px;
-    align-items: center;
-}
-
-.owned-pokeball {
-    width: 90px;
-    height: 90px;
-    background-color: #e0f7fa;
-    border: 2px solid #a7d9f7;
-    border-radius: 50%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
     font-size: 0.9em;
-    font-weight: bold;
-    color: #444;
-    overflow: hidden;
-    position: relative;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    text-align: center;
-    line-height: 1.2;
-    padding: 5px;
-    box-sizing: border-box;
+    margin-top: 10px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
-.owned-pokeball.empty {
-    background-color: #f0f0f0;
-    border: 2px dashed #ccc;
-    font-size: 0.7em;
-    color: #888;
-    line-height: 1.2;
+.shop-item .buy-button:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
 }
 
-#item-bag {
-    list-style: none;
-    padding: 0;
-    margin-top: 20px;
-    text-align: left;
-}
-
-#item-bag li {
-    background-color: #e6f7ff;
-    padding: 10px 15px;
-    margin-bottom: 8px;
-    border-radius: 8px;
-    border-left: 5px solid #8ac0e2;
-    display: flex;
-    align-items: center;
-    font-size: 1.1em;
-}
-
-#item-bag li:last-child {
-    margin-bottom: 0;
-}
-
+/* --- Global Message Display --- */
 #message-display {
-    background-color: rgba(0, 0, 0, 0.8);
-    color: white;
-    padding: 18px;
-    border-radius: 10px;
-    position: fixed;
-    bottom: 30px;
+    position: absolute;
+    top: 20px;
     left: 50%;
     transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
     opacity: 0;
-    transition: opacity 0.5s ease-in-out;
-    pointer-events: none;
-    z-index: 1000;
-    font-size: 1.2em;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    visibility: hidden;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+    z-index: 100;
+    white-space: nowrap;
+    font-size: 1.1em;
 }
 
 #message-display.show {
     opacity: 1;
+    visibility: visible;
 }
 
-/* Modal for Pokemon Full */
+/* --- Modals (Pokemon Full, Battle End Options) --- */
 .modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1001;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
 }
 
 .modal-content {
     background-color: #fff;
     padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
     text-align: center;
-    max-width: 600px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
     width: 90%;
+    box-sizing: border-box;
 }
 
-.modal-content h3 {
-    color: #d9534f;
-    margin-bottom: 25px;
-    font-size: 1.8em;
+.modal-content h2 {
+    color: #dc3545;
+    margin-top: 0;
+    font-size: 2em;
+}
+
+.modal-content p {
+    font-size: 1.1em;
+    margin-bottom: 20px;
+    line-height: 1.5;
 }
 
 #current-pokemons-for-selection {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    margin-bottom: 25px;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 10px;
+    margin: 20px 0;
 }
 
 .selectable-pokemon {
-    border: 2px solid #ccc;
-    border-radius: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
     padding: 10px;
     cursor: pointer;
-    transition: border-color 0.3s ease, background-color 0.3s ease;
+    transition: background-color 0.2s, border-color 0.2s;
+    text-align: center;
     background-color: #f0f0f0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100px;
-    height: 80px;
-    justify-content: center;
+}
+
+.selectable-pokemon:hover {
+    background-color: #e9ecef;
 }
 
 .selectable-pokemon.selected {
-    border-color: #28a745;
-    background-color: #e2f9e4;
-}
-
-.selectable-pokemon:hover:not(.selected) {
     border-color: #007bff;
-    background-color: #e7f7ff;
-}
-
-#new-pokemon-name {
+    background-color: #cfe2ff;
     font-weight: bold;
-    color: #4CAF50;
-    font-size: 1.3em;
-    margin-bottom: 25px;
-    display: block;
 }
 
-#pokemon-full-modal button {
-    padding: 12px 25px;
-    font-size: 1.1em;
+.modal-content button {
+    margin: 8px;
+    padding: 10px 20px;
+    cursor: pointer;
     border: none;
     border-radius: 5px;
-    cursor: pointer;
-    margin: 0 10px;
-    transition: background-color 0.3s ease;
+    font-size: 1em;
+    transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 #confirm-replacement {
@@ -481,13 +586,104 @@ body {
 
 #confirm-replacement:hover {
     background-color: #218838;
+    transform: translateY(-1px);
 }
 
 #cancel-replacement {
-    background-color: #6c757d;
+    background-color: #dc3545;
     color: white;
 }
 
 #cancel-replacement:hover {
-    background-color: #5a6268;
+    background-color: #c82333;
+    transform: translateY(-1px);
+}
+
+/* Battle End Options Modal specific styles */
+#battle-end-options-modal .modal-content h2 {
+    color: #007bff;
+}
+
+#battle-end-options-modal button {
+    background-color: #007bff;
+    color: white;
+}
+
+#battle-end-options-modal button:hover {
+    background-color: #0056b3;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .game-container {
+        padding: 15px;
+        width: 95%;
+        min-height: auto;
+    }
+    #start-screen h1 {
+        font-size: 2.5em;
+    }
+    #start-button {
+        font-size: 1.2em;
+        padding: 12px 25px;
+    }
+    #starter-pokeballs {
+        flex-direction: column;
+        gap: 15px;
+    }
+    .pokeball-choice {
+        width: 90%;
+        max-width: 200px;
+        height: auto;
+    }
+    #game-screen {
+        flex-direction: column;
+        align-items: center;
+        gap: 25px;
+    }
+    #map-selection, #game-info {
+        width: 100%;
+        border-right: none;
+        padding-right: 0;
+        padding-left: 0;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 20px;
+    }
+    #map-grid {
+        grid-template-columns: repeat(2, 1fr); /* More compact on mobile */
+        max-width: 100%;
+    }
+    #pokeball-slots {
+        grid-template-columns: repeat(3, 1fr); /* More compact Pokémon display */
+    }
+    .battle-area {
+        flex-direction: column;
+        align-items: center;
+    }
+    .pokemon-display {
+        width: 90%;
+        margin: 10px 0;
+    }
+    .pokemon-display.opponent-pokemon-display {
+        align-self: center;
+        margin-top: 0;
+    }
+    .pokemon-display.player-pokemon-display {
+        align-self: center;
+        margin-bottom: 0;
+    }
+    #battle-actions {
+        grid-template-columns: 1fr; /* Single column for actions */
+        width: 100%;
+    }
+    #shop-items-grid {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 15px;
+    }
+    .modal-content {
+        padding: 20px;
+    }
+    #current-pokemons-for-selection {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
